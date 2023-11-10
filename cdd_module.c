@@ -6,6 +6,7 @@
 #include<linux/fs.h> 
 #include<linux/device.h>
 #include<linux/kdev_t.h>
+#include<linux/err.h>
 
 // cdd - Character Device Driver
 
@@ -13,7 +14,12 @@
 int kernel_version[2], time;
 
 // variables
+
+// device Number
 dev_t dev_no;
+// device class
+struct class * dev_class;
+
 
 module_param(time, int, S_IRUSR | S_IWUSR);
 module_param_array(kernel_version, int, NULL, S_IRUSR | S_IWUSR);
@@ -34,12 +40,22 @@ static int __init cdd_init(void)
     // allocate device number
     if ((alloc_chrdev_region(&dev_no, 0, 1, "cdd_device")) < 0) {
         pr_info("Unable to allocated device number\n");
+        return -1;
     }
 
     // printing major no. and minor no. of device no.
     pr_info("Major No. is %d \nMinor Number is %d \n", MAJOR(dev_no), MINOR(dev_no));
 
     // create device class
+    dev_class = create_class("cdd_device");
+
+    if(IS_ERR(dev_class)) {
+        pr_info("Unable to create struct class for the device\n");
+        goto r_class;
+    }
+
+    r_class:
+        class_destroy(dev_class);
 
     return 0;
 }
@@ -49,6 +65,9 @@ static int __init cdd_init(void)
 */
 static void __exit cdd_exit(void)
 {
+    // destroy the device class
+    class_destroy(dev_class);
+
     // unregistering the device number while exiting
     unregister_chrdev_region(dev_no, 1);
     
