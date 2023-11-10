@@ -1,4 +1,4 @@
-obj-m += character_device_driver.o
+obj-m += cdd_module.o
 
 KVERSION = $(shell uname -r)
 KDIR = /lib/modules/$(KVERSION)/build

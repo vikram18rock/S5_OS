@@ -2,7 +2,8 @@
 #include<linux/init.h>
 #include<linux/module.h>
 #include<linux/moduleparam.h>   // passing arguments
-#include<linux/version.h> // for capturing compiled linux version
+#include<linux/version.h>       // for capturing compiled linux version
+#include<linux/device.h>
  
 // cdd - Character Device Driver
 
@@ -17,11 +18,16 @@ module_param_array(kernel_version, int, NULL, S_IRUSR | S_IWUSR);
 */
 static int __init cdd_init(void)
 {
+    // checking kernel version
     if (KERNEL_VERSION(kernel_version[0], kernel_version[1], 0) != KERNEL_VERSION(LINUX_VERSION_MAJOR, LINUX_VERSION_PATCHLEVEL, 0)) {
         printk(KERN_INFO "Not compatible with this Kernel Version\n");
         return -1;
     }
     printk(KERN_INFO "Kernel Module Inserted Successfully...\n");
+
+    // create device class
+    
+
     return 0;
 }
 

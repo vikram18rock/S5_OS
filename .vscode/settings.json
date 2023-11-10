@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "version.h": "c",
+        "kernel.h": "c",
+        "moduleparam.h": "c",
+        "module.h": "c",
+        "*.tcc": "c",
+        "device.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "enabled"
+}
