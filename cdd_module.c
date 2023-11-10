@@ -31,7 +31,7 @@ static int __init cdd_init(void)
 {
     // checking kernel version
     if (KERNEL_VERSION(kernel_version[0], kernel_version[1], 0) != KERNEL_VERSION(LINUX_VERSION_MAJOR, LINUX_VERSION_PATCHLEVEL, 0)) {
-        pr_info("Not compatible with this Kernel Version\n");
+        pr_err("Not compatible with this Kernel Version\n");
         return -1;
     }
 
@@ -39,7 +39,7 @@ static int __init cdd_init(void)
 
     // allocate device number
     if ((alloc_chrdev_region(&dev_no, 0, 1, "cdd_device")) < 0) {
-        pr_info("Unable to allocated device number\n");
+        pr_err("Unable to allocated device number\n");
         return -1;
     }
 
@@ -50,12 +50,23 @@ static int __init cdd_init(void)
     dev_class = class_create("cdd_device");
 
     if(IS_ERR(dev_class)) {
-        pr_info("Unable to create struct class for the device\n");
+        pr_err("Unable to create struct class for the device\n");
         goto r_class;
     }
 
-    r_class:
+    // create device
+    if (IS_ERR(device_create(dev_class, NULL, dev_no, NULL, "cdd_device"))) {
+        pr_err("Unable to create device\n");
+        goto r_device;
+    }
+
+    // if device can't be created destroy the created class and dev_no
+    r_device:
         class_destroy(dev_class);
+
+    // if class can't be created unregister the dev_no
+    r_class:
+        unregister_chrdev_region(dev_no);
 
     return 0;
 }
