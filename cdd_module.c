@@ -47,7 +47,7 @@ static int __init cdd_init(void)
     pr_info("Major No. is %d \nMinor Number is %d \n", MAJOR(dev_no), MINOR(dev_no));
 
     // create device class
-    dev_class = create_class("cdd_device");
+    dev_class = class_create("cdd_device");
 
     if(IS_ERR(dev_class)) {
         pr_info("Unable to create struct class for the device\n");
