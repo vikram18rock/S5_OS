@@ -25,18 +25,21 @@ static int __init cdd_init(void)
 {
     // checking kernel version
     if (KERNEL_VERSION(kernel_version[0], kernel_version[1], 0) != KERNEL_VERSION(LINUX_VERSION_MAJOR, LINUX_VERSION_PATCHLEVEL, 0)) {
-        printk(KERN_INFO "Not compatible with this Kernel Version\n");
+        pr_info("Not compatible with this Kernel Version\n");
         return -1;
     }
+
+    pr_info("Kernel Module Inserted Successfully...\n");
 
     // allocate device number
     if ((alloc_chrdev_region(&dev_no, 0, 1, "cdd_device")) < 0) {
         pr_info("Unable to allocated device number\n");
     }
 
-    // create device class
+    // printing major no. and minor no. of device no.
+    pr_info("Major No. is %d \nMinor Number is %d \n", MAJOR(dev_no), MINOR(dev_no));
 
-    printk(KERN_INFO "Kernel Module Inserted Successfully...\n");
+    // create device class
 
     return 0;
 }
@@ -46,7 +49,10 @@ static int __init cdd_init(void)
 */
 static void __exit cdd_exit(void)
 {
-    printk(KERN_INFO "Kernel Module Removed Successfully...\n");
+    // unregistering the device number while exiting
+    unregister_chrdev_region(dev_no, 1);
+    
+    pr_info("Kernel Module Removed Successfully...\n");
 }
 
 // Register init and exit functions
