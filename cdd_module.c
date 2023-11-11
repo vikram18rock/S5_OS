@@ -22,7 +22,7 @@ module_param_array(kernel_version, int, NULL, S_IRUSR | S_IWUSR);
 // device Number
 dev_t dev_no;
 // device class
-struct class* dev_class;
+static struct class* dev_class;
 // cdev struct
 static struct cdev cdd_cdev;
 // device file struct
@@ -104,7 +104,7 @@ static int __init cdd_init(void)
     pr_info("Major No. is %d \nMinor Number is %d \n", MAJOR(dev_no), MINOR(dev_no));
 
     // create device class
-    dev_class = class_create("cdd_device");
+    dev_class = class_create("cdd_class");
 
     if (IS_ERR(dev_class)) {
         pr_err("Unable to create struct class for the device\n");
@@ -141,7 +141,7 @@ r_device:
 r_class:
     unregister_chrdev_region(dev_no, 1);
 
-    return 0;
+    return -1;
 }
 
 /*
