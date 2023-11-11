@@ -10,6 +10,8 @@
 #include<linux/cdev.h>
 #include<linux/slab.h>
 #include<linux/uaccess.h>
+#include<linux/wait.h>
+#include<linux/kthread.h>
 
 // cdd - Character Device Driver
 
@@ -33,6 +35,14 @@ static struct cdev cdd_cdev;
 static struct device* cdd_device;
 // cdd's kernel space buffer pointer
 uint8_t* cdd_kernel_buffer;
+// wait thread
+static struct task_struct *wait_thread;
+// wait queue head and usageflag
+wait_queue_head_t wait_queue_cdd;
+int wait_queue_flag = 0;
+
+// read count
+uint32_t read_count = 0;
 
 // function prototypes for file operations
 static int cdd_open(struct inode* inode, struct file* file);
@@ -50,6 +60,26 @@ struct file_operations f_ops =
     .open = cdd_open,
     .release = cdd_release,
 };
+
+/*
+** function for the kernle thread
+*/
+static int wait_function(void *unused)
+{
+    // purpose is to print no. of reads and capture event of exit 
+    while(1) {
+            pr_info("Waiting For Event...\n");
+            wait_event_interruptible(wait_queue_cdd, wait_queue_flag != 0 );
+            if(wait_queue_flag == 2) {
+                pr_info("Event Came From Exit Function\n");
+                return 0;
+            }
+            pr_info("Event Came From Read Function - %d\n", ++read_count);
+            wait_queue_flag = 0;
+    }
+    do_exit(0);
+    return 0;
+}
 
 /*
 ** This function will be called when we open the Device file
@@ -88,6 +118,10 @@ static ssize_t cdd_read(struct file* filp, char __user* buf, size_t len, loff_t*
     }
     /* Move reading off */
     *off += len;
+
+    // wake up queue if a read signal is encountered
+    wait_queue_flag = 1;
+    wake_up_interruptible(&wait_queue_cdd);
     return len;
 }
 
@@ -168,6 +202,20 @@ static int __init cdd_init(void)
     }
     strcpy(cdd_kernel_buffer, "Default\n");
 
+    // initializing a waitqueue
+    init_waitqueue_head(&wait_queue_cdd);
+
+    // create a wait thread named "waitThread"
+    wait_thread = kthread_create(wait_function, NULL, "WaitThread");
+    pr_info("Creating a Thred on wait function");
+    if (wait_thread) {
+        pr_info("Thread Created successfully\n");
+        wake_up_process(wait_thread);
+    }
+    else {
+        pr_info("Thread creation failed\n");
+    }
+
     // for returning normally if no errors are enlenered
     return 0;
 
@@ -191,6 +239,10 @@ r_class:
 */
 static void __exit cdd_exit(void)
 {
+    // wakeup wait queue if in exit
+    wait_queue_flag = 2;
+    wake_up_interruptible(&wait_queue_cdd);
+
     // freeing the space we used
     kfree(cdd_kernel_buffer);
 
