@@ -6,6 +6,7 @@
                 "${workspaceFolder}/**",
                 "/usr/src/kernels/**",
                 "/usr/src/kernels/6.5.9-100.fc37.x86_64/include/linux/**",
+                "/usr/src/kernels/6.5.9-100.fc37.x86_64/arch/x86/include/**",
                 "/usr/include/linux/**"
             ],
             "defines": [

@@ -22,63 +22,63 @@ module_param_array(kernel_version, int, NULL, S_IRUSR | S_IWUSR);
 // device Number
 dev_t dev_no;
 // device class
-struct class * dev_class;
+struct class* dev_class;
 // cdev struct
 static struct cdev cdd_cdev;
 // device file struct
-static struct device * cdd_device;
+static struct device* cdd_device;
 
 // function prototypes for file operations
-static int cdd_open(struct inode *inode, struct file *file);
-static int cdd_release(struct inode *inode, struct file *file);
-static ssize_t cdd_read(struct file *filp, char __user *buf, size_t len, loff_t * off);
-static ssize_t cdd_write(struct file *filp, const char *buf, size_t len, loff_t * off);
+static int cdd_open(struct inode* inode, struct file* file);
+static int cdd_release(struct inode* inode, struct file* file);
+static ssize_t cdd_read(struct file* filp, char __user* buf, size_t len, loff_t* off);
+static ssize_t cdd_write(struct file* filp, const char* buf, size_t len, loff_t* off);
 
 
 // file operations for the cdev struct
-struct file_operations f_ops = 
+struct file_operations f_ops =
 {
-    .owner      = THIS_MODULE,
-    .read       = cdd_read,
-    .write      = cdd_write,
-    .open       = cdd_open,
-    .release    = cdd_release,
+    .owner = THIS_MODULE,
+    .read = cdd_read,
+    .write = cdd_write,
+    .open = cdd_open,
+    .release = cdd_release,
 };
 
 /*
 ** This function will be called when we open the Device file
 */
-static int cdd_open(struct inode *inode, struct file *file)
+static int cdd_open(struct inode* inode, struct file* file)
 {
-        pr_info("Driver Open Function Called...!!!\n");
-        return 0;
+    pr_info("Driver Open Function Called...!!!\n");
+    return 0;
 }
 
 /*
 ** This function will be called when we close the Device file
 */
-static int cdd_release(struct inode *inode, struct file *file)
+static int cdd_release(struct inode* inode, struct file* file)
 {
-        pr_info("Driver Release Function Called...!!!\n");
-        return 0;
+    pr_info("Driver Release Function Called...!!!\n");
+    return 0;
 }
 
 /*
 ** This function will be called when we read the Device file
 */
-static ssize_t cdd_read(struct file *filp, char __user *buf, size_t len, loff_t *off)
+static ssize_t cdd_read(struct file* filp, char __user* buf, size_t len, loff_t* off)
 {
-        pr_info("Driver Read Function Called...!!!\n");
-        return 0;
+    pr_info("Driver Read Function Called...!!!\n");
+    return 0;
 }
 
 /*
 ** This function will be called when we write the Device file
 */
-static ssize_t cdd_write(struct file *filp, const char __user *buf, size_t len, loff_t *off)
+static ssize_t cdd_write(struct file* filp, const char __user* buf, size_t len, loff_t* off)
 {
-        pr_info("Driver Write Function Called...!!!\n");
-        return len;
+    pr_info("Driver Write Function Called...!!!\n");
+    return len;
 }
 
 /*
@@ -106,7 +106,7 @@ static int __init cdd_init(void)
     // create device class
     dev_class = class_create("cdd_device");
 
-    if(IS_ERR(dev_class)) {
+    if (IS_ERR(dev_class)) {
         pr_err("Unable to create struct class for the device\n");
         goto r_class;
     }
@@ -130,16 +130,16 @@ static int __init cdd_init(void)
     return 0;
 
     // if the entry is not added due to error
-    r_cdev:
-        device_del(cdd_device);
+r_cdev:
+    device_del(cdd_device);
 
     // if device can't be created destroy the created class and dev_no
-    r_device:
-        class_destroy(dev_class);
+r_device:
+    class_destroy(dev_class);
 
     // if class can't be created unregister the dev_no
-    r_class:
-        unregister_chrdev_region(dev_no, 1);
+r_class:
+    unregister_chrdev_region(dev_no, 1);
 
     return 0;
 }
@@ -154,7 +154,7 @@ static void __exit cdd_exit(void)
 
     // unregistering the device number while exiting
     unregister_chrdev_region(dev_no, 1);
-    
+
     pr_info("Kernel Module Removed Successfully...\n");
 }
 

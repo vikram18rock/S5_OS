@@ -7,7 +7,14 @@
         "*.tcc": "c",
         "device.h": "c",
         "kdev_t.h": "c",
-        "fs.h": "c"
+        "fs.h": "c",
+        "cdev.h": "c",
+        "err.h": "c",
+        "atomic": "cpp",
+        "chrono": "cpp",
+        "cstdint": "cpp",
+        "random": "cpp",
+        "stop_token": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }
