@@ -8,6 +8,8 @@
 #include<linux/kdev_t.h>
 #include<linux/err.h>
 #include<linux/cdev.h>
+#include<linux/slab.h>
+#include<linux/uaccess.h>
 
 // cdd - Character Device Driver
 
@@ -18,6 +20,8 @@ module_param(time, int, S_IRUSR | S_IWUSR);
 module_param_array(kernel_version, int, NULL, S_IRUSR | S_IWUSR);
 
 // variables
+#define default_size 1024
+static int used_len;
 
 // device Number
 dev_t dev_no;
@@ -27,6 +31,8 @@ static struct class* dev_class;
 static struct cdev cdd_cdev;
 // device file struct
 static struct device* cdd_device;
+// cdd's kernel space buffer pointer
+uint8_t* cdd_kernel_buffer;
 
 // function prototypes for file operations
 static int cdd_open(struct inode* inode, struct file* file);
@@ -68,8 +74,21 @@ static int cdd_release(struct inode* inode, struct file* file)
 */
 static ssize_t cdd_read(struct file* filp, char __user* buf, size_t len, loff_t* off)
 {
-    pr_info("Driver Read Function Called...!!!\n");
-    return 0;
+    used_len = strlen(cdd_kernel_buffer);
+    pr_info("Device Read Function Called....!!\n");
+    /* If off is behind the end of a file we have nothing to read */
+    if (*off >= used_len)
+        return 0;
+    /* If a user tries to read more than we have, read only as many bytes as we have */
+    if (*off + len > used_len)
+        len = (used_len - *off);
+    if (copy_to_user(buf, cdd_kernel_buffer + *off, len) != 0) {
+        pr_err("Data Read : ERR!\n");
+        return -EFAULT;
+    }
+    /* Move reading off */
+    *off += len;
+    return len;
 }
 
 /*
@@ -77,7 +96,22 @@ static ssize_t cdd_read(struct file* filp, char __user* buf, size_t len, loff_t*
 */
 static ssize_t cdd_write(struct file* filp, const char __user* buf, size_t len, loff_t* off)
 {
-    pr_info("Driver Write Function Called...!!!\n");
+    pr_info("Driver Write Function Called...!!! off is %lld\n", *off);
+    // if the offset is beyond our space
+    if (*off >= default_size) {
+        return 0;
+    }
+    // if user tries to access more than size we have
+    if (*off + len > default_size) {
+        len = default_size - *off;
+    }
+    if (copy_from_user(cdd_kernel_buffer + *off, buf, len))
+    {
+        pr_err("Data Wrie : ERR!\n");
+        return -EFAULT;
+    }
+    // Move writing off
+    *off += len;
     return len;
 }
 
@@ -126,7 +160,15 @@ static int __init cdd_init(void)
         pr_err("Unable to add Cdev entry\n");
         goto r_cdev;
     }
-    // for returning normally if no errors are encountered
+
+    // allocating kernel space memory for our driver
+    if (IS_ERR(cdd_kernel_buffer = kmalloc(default_size, GFP_KERNEL))) {
+        pr_err("Unable to allocate kernel space for the driver\n");
+        goto r_cdev;
+    }
+    strcpy(cdd_kernel_buffer, "Default device data");
+
+    // for returning normally if no errors are enlenered
     return 0;
 
     // if the entry is not added due to error
@@ -149,6 +191,15 @@ r_class:
 */
 static void __exit cdd_exit(void)
 {
+    // freeing the space we used
+    kfree(cdd_kernel_buffer);
+
+    // delete cdev entry
+    cdev_del(&cdd_cdev);
+
+    // delete device
+    device_del(cdd_device);
+
     // destroy the device class
     class_destroy(dev_class);
 
