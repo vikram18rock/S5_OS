@@ -14,7 +14,16 @@
         "chrono": "cpp",
         "cstdint": "cpp",
         "random": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "ctime": "c",
+        "iomanip": "c",
+        "limits": "c",
+        "numeric": "c",
+        "ratio": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "core": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }
