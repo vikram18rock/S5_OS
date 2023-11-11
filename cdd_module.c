@@ -39,10 +39,16 @@ uint8_t* cdd_kernel_buffer;
 static struct task_struct *wait_thread;
 // wait queue head and usageflag
 wait_queue_head_t wait_queue_cdd;
-int wait_queue_flag = 0;
+static int wait_queue_flag = 0;
+// User name array
+char user_name[10];
+// timer declaration
+static struct timer_list cdd_timer;
+// timer expired flag
+static int timer_expired = 0;
 
 // read count
-uint32_t read_count = 0;
+static uint32_t read_count = 0;
 
 // function prototypes for file operations
 static int cdd_open(struct inode* inode, struct file* file);
@@ -70,8 +76,13 @@ static int wait_function(void *unused)
     while(1) {
             pr_info("Waiting For Event...\n");
             wait_event_interruptible(wait_queue_cdd, wait_queue_flag != 0 );
-            if(wait_queue_flag == 2) {
-                pr_info("Event Came From Exit Function\n");
+            if(wait_queue_flag == 2 && read_count) {
+                pr_info("Event Came From Write after Read Function\n");
+
+                // indicating desired order of events
+                wait_queue_flag = 3;
+
+                memcpy(user_name, cdd_kernel_buffer, used_len);
                 return 0;
             }
             pr_info("Event Came From Read Function - %d\n", ++read_count);
@@ -146,6 +157,11 @@ static ssize_t cdd_write(struct file* filp, const char __user* buf, size_t len, 
     }
     // Move writing off
     *off += len;
+
+    // wakeup wait queue if order satisfied
+    wait_queue_flag = 2;
+    wake_up_interruptible(&wait_queue_cdd);
+
     return len;
 }
 
@@ -239,9 +255,11 @@ r_class:
 */
 static void __exit cdd_exit(void)
 {
-    // wakeup wait queue if in exit
-    wait_queue_flag = 2;
-    wake_up_interruptible(&wait_queue_cdd);
+    if (wait_queue_flag == 3) {
+        pr_info("Successfully completed the actions within time\nUser Name is %s", user_name);
+    }
+    else
+        pr_info("Failure\n");
 
     // freeing the space we used
     kfree(cdd_kernel_buffer);
