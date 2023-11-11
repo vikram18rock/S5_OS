@@ -166,7 +166,7 @@ static int __init cdd_init(void)
         pr_err("Unable to allocate kernel space for the driver\n");
         goto r_cdev;
     }
-    strcpy(cdd_kernel_buffer, "Default device data");
+    strcpy(cdd_kernel_buffer, "Default\n");
 
     // for returning normally if no errors are enlenered
     return 0;
