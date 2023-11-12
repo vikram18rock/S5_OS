@@ -52,6 +52,7 @@ static int timer_expired = 0;
 
 // read count
 static uint32_t read_count = 0;
+static uint32_t write_count = 0;
 
 // function prototypes for file operations
 static int cdd_open(struct inode* inode, struct file* file);
@@ -86,15 +87,22 @@ static int wait_function(void* unused)
         pr_info("Waiting For Event...\n");
         wait_event_interruptible(wait_queue_cdd, wait_queue_flag != 0);
         if (wait_queue_flag == 2 && read_count) {
-            pr_info("Event Came From Write after Read Function\n");
+            if (read_count == 1)
+            {
+                pr_info("Event Came From Write after Read\n");
 
-            // indicating desired order of events
-            wait_queue_flag = 3;
+                // indicating desired order of events
+                wait_queue_flag = 3;
 
-            memcpy(user_name, cdd_kernel_buffer, used_len);
-            return 0;
+                memcpy(user_name, cdd_kernel_buffer, used_len);
+                return 0;
+            }
+            else
+                pr_info("Event Came from Write Function [%d]\n", ++write_count);
         }
-        pr_info("Event Came From Read Function - %d\n", ++read_count);
+        if (wait_queue_flag == 1) {
+            pr_info("Event Came From Read Function [%d]\n", ++read_count);
+        }
         wait_queue_flag = 0;
     }
     do_exit(0);
@@ -106,7 +114,7 @@ static int wait_function(void* unused)
 */
 static int cdd_open(struct inode* inode, struct file* file)
 {
-    pr_info("Driver Open Function Called...!!!\n");
+    pr_info("Device File Opened...!!!\n");
     return 0;
 }
 
@@ -115,7 +123,7 @@ static int cdd_open(struct inode* inode, struct file* file)
 */
 static int cdd_release(struct inode* inode, struct file* file)
 {
-    pr_info("Driver Release Function Called...!!!\n");
+    pr_info("Device File Released...!!!\n");
     return 0;
 }
 
@@ -150,7 +158,7 @@ static ssize_t cdd_read(struct file* filp, char __user* buf, size_t len, loff_t*
 */
 static ssize_t cdd_write(struct file* filp, const char __user* buf, size_t len, loff_t* off)
 {
-    pr_info("Driver Write Function Called...!!! off is %lld\n", *off);
+    pr_info("Driver Write Function Called...!!!\n");
     // if the offset is beyond our space
     if (*off >= default_size) {
         return 0;
@@ -161,7 +169,7 @@ static ssize_t cdd_write(struct file* filp, const char __user* buf, size_t len, 
     }
     if (copy_from_user(cdd_kernel_buffer + *off, buf, len))
     {
-        pr_err("Data Wrie : ERR!\n");
+        pr_err("Data Write : ERR!\n");
         return -EFAULT;
     }
     // Move writing off
@@ -194,7 +202,7 @@ static int __init cdd_init(void)
     }
 
     // printing major no. and minor no. of device no.
-    pr_info("Major No. is %d \nMinor Number is %d \n", MAJOR(dev_no), MINOR(dev_no));
+    pr_info("Major No. is %d \nMinor Number is %d \nTimer Span is %d secs\n", MAJOR(dev_no), MINOR(dev_no), time);
 
     // create device class
     dev_class = class_create("cdd_class");
@@ -231,16 +239,15 @@ static int __init cdd_init(void)
     timer_setup(&cdd_timer, timer_callback, 0);
 
     mod_timer(&cdd_timer, jiffies + msecs_to_jiffies(time * TIMEOUT));
-    pr_info("Timer Started\n");
+    pr_info("Timer Started...\n");
 
     // initializing a waitqueue
     init_waitqueue_head(&wait_queue_cdd);
 
     // create a wait thread named "waitThread"
     wait_thread = kthread_create(wait_function, NULL, "WaitThread");
-    pr_info("Creating a Thred on wait function");
     if (wait_thread) {
-        pr_info("Thread Created successfully\n");
+        pr_info("Creating a Thread for Recording Order of Events\n");
         wake_up_process(wait_thread);
     }
     else {
@@ -270,14 +277,23 @@ r_class:
 */
 static void __exit cdd_exit(void)
 {
+    pr_info("rmmod...!!\nChecking the flow of events");
+    
     // remove timer while unloading the module
     del_timer(&cdd_timer);
 
-    if (wait_queue_flag == 3 && !timer_expired) {
-        pr_info("Successfully completed the actions within time\nUser Name is %s", user_name);
+    if (wait_queue_flag == 3) {
+        if (timer_expired) {
+            pr_info("Failure!! Operations are not performed within time\n");
+        }
+        else {
+            pr_info("Successfully completed the actions within time\nUser Name is %s", user_name);
+        }
     }
+    else if (read_count > 1 || write_count > 1)
+        pr_info("Failure!! Multiple Read Write Operations\n");
     else
-        pr_info("Failure\n");
+        pr_info("Failure!! Not the Desired order of Events\n");
 
     // freeing the space we used
     kfree(cdd_kernel_buffer);
