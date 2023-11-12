@@ -147,6 +147,8 @@ static ssize_t cdd_read(struct file* filp, char __user* buf, size_t len, loff_t*
     /* Move reading off */
     *off += len;
 
+    write_count++;
+
     // wake up queue if a read signal is encountered
     wait_queue_flag = 1;
     wake_up_interruptible(&wait_queue_cdd);
@@ -193,8 +195,6 @@ static int __init cdd_init(void)
         return -1;
     }
 
-    pr_info("Kernel Module Inserted Successfully...\n");
-
     // allocate device number
     if ((alloc_chrdev_region(&dev_no, 0, 1, "cdd_device")) < 0) {
         pr_err("Unable to allocated device number\n");
@@ -234,6 +234,8 @@ static int __init cdd_init(void)
         goto r_cdev;
     }
     strcpy(cdd_kernel_buffer, "Default\n");
+
+    pr_info("Kernel Module Inserted Successfully...\n");
 
     /* setup your timer to call timer_callback */
     timer_setup(&cdd_timer, timer_callback, 0);
@@ -321,4 +323,4 @@ module_exit(cdd_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("PONNURU AADARSH");
 MODULE_DESCRIPTION("A CHARACTER DEVICE DRIVER");
-MODULE_VERSION("2:1.0");
+MODULE_VERSION("1.0");
