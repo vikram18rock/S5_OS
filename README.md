@@ -1,6 +1,5 @@
 # S5_OS_Assignment_2
-## Intro
-## Introduction: 
+## Introduction
 The assignment required the development of a Character Device Driver with specific functionalities. This report details the methodology, explanation, implementation, and outcomes of the assignment.
 ## Usage
 1. **Open a Terminal:**
@@ -30,10 +29,10 @@ The assignment required the development of a Character Device Driver with specif
 	- Once the module is successfully compiled, use the `insmod` command to load the module into the kernel. Replace `/path/to/cdd_module.ko` with the actual path to your compiled module.
 	
 	```bash
-	sudo insmod /path/to/cdd_module.ko kernel_version=5,2 timer=30
+	sudo insmod /path/to/cdd_module.ko kernel_version=5,2 `time`=30
 	```
 	
-	This command loads the module with specific parameters (`kernel_version` and `timer`) required by your driver.
+	This command loads the module with specific parameters (`kernel_version` and `time`) required by your driver.
 	
 6. **Check `dmesg` for Output:**
 	
@@ -42,7 +41,7 @@ The assignment required the development of a Character Device Driver with specif
 	dmesg
 	```
 	
-	Look for the output related to your module, including major number, minor number, and timer value.
+	Look for the output related to your module, including major number, minor number, and time value.
 	
 7. **Perform Driver Actions:**
 	
@@ -75,7 +74,7 @@ The assignment required the development of a Character Device Driver with specif
 
 These steps assume that your kernel module source code is correctly written and that there are no compilation errors. Always check the terminal and `dmesg` for any error messages or debugging output during these steps.
 
-This driver creates a character device, reads and writes data, uses a timer, and coordinates events through a wait queue and kernel thread for orderly execution within a specified time.
+This driver creates a character device, reads and writes data, uses a time, and coordinates events through a wait queue and kernel thread for orderly execution within a specified time.
 
 ## Flow of the Code
 
@@ -87,14 +86,14 @@ This driver creates a character device, reads and writes data, uses a timer, and
 	P-->|No|Z[Stop]
 	P-->|Yes|E[Create Device class and File]
 	F-->G[Allocate memory for the device file]
-	G-->H[Initialize timer]
+	G-->H[Initialize time]
 	H-->I[Initialize Wait queue]
 	I-->J[Record Order of Events]
 
 	E-->F[Create a Cdev entry for device file]
 
 	K[rmmod]-->L[Check the Order]
-	L--correct-->T{Check Timer}
+	L--correct-->T{Check time}
 	T-->|in time|M[Print User name]
 	L--wrong-->N[Failure]
 	M-->O[End]
