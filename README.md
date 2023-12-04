@@ -29,7 +29,7 @@ The assignment required the development of a Character Device Driver with specif
 	- Once the module is successfully compiled, use the `insmod` command to load the module into the kernel. Replace `/path/to/cdd_module.ko` with the actual path to your compiled module.
 	
 	```bash
-	sudo insmod /path/to/cdd_module.ko kernel_version=5,2 `time`=30
+	sudo insmod /path/to/cdd_module.ko kernel_version=5,2 time=30
 	```
 	
 	This command loads the module with specific parameters (`kernel_version` and `time`) required by your driver.
